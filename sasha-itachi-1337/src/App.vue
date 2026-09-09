@@ -51,7 +51,8 @@ async function sendMessage(){
 
 onMounted(async ()=>{
   try {
-    db = await Database.load("sqlite:messenger,db");
+    db = await Database.load("sqlite:messenger.db");
+
 
     await loadMessages();
 
@@ -71,7 +72,7 @@ onMounted(async ()=>{
       <div>
         <h1>888</h1>
         <p>{{status}}</p>
-      </div>
+      </div> 
       <span class="badge">
         local
       </span>
@@ -150,9 +151,10 @@ onMounted(async ()=>{
   background: #111318;
 }
 .app{
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .header{
@@ -162,6 +164,7 @@ onMounted(async ()=>{
   padding: 18px 24px;
   border-bottom: 1px solid #292c34;
   background: #17191f;
+  flex-shrink: 0;
 }
 
 .header h1{
@@ -184,8 +187,8 @@ onMounted(async ()=>{
   font-size: 12px;
 }
 
-.chat{
-  flex:1;
+.chat {
+  flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -194,6 +197,7 @@ onMounted(async ()=>{
 .chat-info{
   padding: 20px 25px;
   border-bottom: 1px solid #252830;
+  flex-shrink: 0;
 }
 
 .chat-info h2{
@@ -206,13 +210,14 @@ onMounted(async ()=>{
   color: #858c98;
 }
 
-.messages{
+.messages {
   flex: 1;
-  overflow-y:auto;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 10px;
   padding: 24px;
+  min-height: 0;
 }
 .empty{
   margin: auto;
@@ -253,6 +258,8 @@ onMounted(async ()=>{
   padding:16px 20px;
   border-top: 1px solid #252830;
   background: #17191f;
+  flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .composer input {
