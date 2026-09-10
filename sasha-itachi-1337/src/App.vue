@@ -1,21 +1,17 @@
 <script setup lang="ts">
 // Импортим из vue 2 функции
 // onMounted - запускает код после отображения всех компонентов
-// ref - быстрая переменная
 import { onMounted, ref } from "vue";
 
 import Database from "@tauri-apps/plugin-sql";
 
+import AppHeader from "./components/AppHeader.vue";
+import MessageList from "./components/MessageList.vue";
+import MessageComposer from "./components/MessageComposer.vue";
+
+import type {Message} from "./types/message.ts";
+
 // Строит структуру одного сообщения
-
-interface Message {
-  id: number;
-  author: string,
-  body: string,
-  created_at: string;
-}
-
-const draft = ref("");
 
 const messages = ref<Message[]>([]);
 
@@ -33,11 +29,7 @@ async function loadMessages(){
   );
 }
 
-async function sendMessage(){
-  const body = draft.value.trim();
-
-  if(!body) return;
-
+async function sendMessage(body: string){
   if (!db) return;
 
   await db.execute(
@@ -45,7 +37,7 @@ async function sendMessage(){
       ["Вы", body],
   )
 
-  draft.value = "";
+
   await loadMessages();
 }
 
@@ -63,66 +55,21 @@ onMounted(async ()=>{
     status.value = "Ошибка подключения в бд"
   }
 })
-
 </script>
 
 <template>
   <main class="app">
-    <header class="header">
-      <div>
-        <h1>888</h1>
-        <p>{{status}}</p>
-      </div> 
-      <span class="badge">
-        local
-      </span>
-    </header>
-
+    <AppHeader :status="status"/>
     <section class="chat">
       <div class="chat-info">
           <h2>Первый чат</h2>
           <p>strannost</p>
+
+
       </div>
+      <MessageList :messages="messages"/>
 
-      <div class="messages">
-        <div
-          v-if="messages.length === 0"
-          class="empty"
-        >
-          <strong>
-            Пока пусто
-          </strong>
-          <span>Напишите первое сообщение</span>
-
-        </div>
-
-        <article
-            v-for="message in messages"
-            :key="message.id"
-            class="message"
-        >
-          <p> {{message.body}}</p>
-
-          <footer>
-            <span> {{message.author}} </span>
-            <span> | </span>
-            <span> {{message.created_at}}</span>
-          </footer>
-        </article>
-      </div>
-
-      <form
-        class="composer"
-        @submit.prevent="sendMessage"
-      >
-        <input
-          v-model="draft"
-          type="text"
-          placeholder="Напишите сообщение"
-          autocomplete="off"
-        />
-        <button type="submit">Отравить</button>
-      </form>
+      <MessageComposer @send="sendMessage"/>
     </section>
   </main>
 </template>
@@ -157,36 +104,6 @@ onMounted(async ()=>{
   overflow: hidden;
 }
 
-.header{
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 18px 24px;
-  border-bottom: 1px solid #292c34;
-  background: #17191f;
-  flex-shrink: 0;
-}
-
-.header h1{
-  margin: 0;
-  font-size: 18px;
-}
-
-.header p{
-  margin: 4px 0 0;
-  font-size: 12px;
-  color: #8f96a3;
-}
-
-.badge{
-  padding: 6px 12px;
-  border: 1px solid #343842;
-  border-radius: 6px;
-  color: #afb5c0;
-  background: #20232a;
-  font-size: 12px;
-}
-
 .chat {
   flex: 1;
   min-height: 0;
@@ -208,89 +125,6 @@ onMounted(async ()=>{
 .chat-info p{
   margin: 5px 0 0;
   color: #858c98;
-}
-
-.messages {
-  flex: 1;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 24px;
-  min-height: 0;
-}
-.empty{
-  margin: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  text-align: center;
-  color: #858c98;
-}
-
-.message{
-  align-self: flex-end;
-  max-width: 70%;
-  margin: 0;
-  padding: 10px 12px;
-  border-radius: 10px;
-  background: #386be0;
-}
-
-.message p{
-  margin: 0;
-  line-height: 1.45;
-  overflow-wrap: anywhere;
-}
-
-.message footer{
-  display: flex;
-  justify-content: flex-end;
-  gap: 5px;
-  margin-top: 6px;
-  color: #ccd8f7;
-  font-size:10px;
-}
-
-.composer{
-  display: flex;
-  gap: 10px;
-  padding:16px 20px;
-  border-top: 1px solid #252830;
-  background: #17191f;
-  flex-shrink: 0;
-  box-sizing: border-box;
-}
-
-.composer input {
-  flex: 1;
-  min-width: 0;
-  padding: 12px 14px;
-  border: 1px solid #343842;
-  border-radius: 6px;
-  outline: none;
-  color: #f2f3f5;
-  background: #20232a;
-  font: inherit;
-}
-
-.composer input:focus{
-  border-color: #4f7fea;
-}
-
-.composer button{
-  padding: 0 18px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  color: white;
-  background: #386be0;
-  font: inherit;
-  font-weight: 600;
-}
-
-.composer button:hover {
-  background: #4779e8;
 }
 
 </style>
