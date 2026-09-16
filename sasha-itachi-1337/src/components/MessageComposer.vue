@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {ref} from "vue";
+import {open} from "@tauri-apps/plugin-dialog";
 
 const emit = defineEmits<{
   send: [body: string]
@@ -20,6 +21,24 @@ function submitMessage() {
 
 function addEmoji(emoji: string) {
   draft.value += emoji;
+}
+
+// open - Открывает системный выбор файла
+async function pickImage() {
+  const file = await open({
+    multiple: false, // Запрещает выбрать несколько файлов
+    filters: [
+      {
+        name: "Images",
+        extensions: ["png", "jpg", "jpeg", "webp"]
+      }
+    ]
+  });
+
+  if (!file) return;
+
+  emit("send", file);
+  showEmoji.value = false;
 }
 </script>
 
@@ -59,7 +78,16 @@ function addEmoji(emoji: string) {
 
       <button
           type="button"
-          class="emoji-toggle"
+          class="icon-btn"
+          title="Прикрепить картинку"
+          @click="pickImage"
+      >
+        📎
+      </button>
+
+      <button
+          type="button"
+          class="icon-btn"
           :class="{active: showEmoji}"
           @click="showEmoji = !showEmoji"
       >
@@ -114,5 +142,66 @@ function addEmoji(emoji: string) {
 
 .composer button:hover {
   background: #4779e8;
+}
+
+/* Общий стиль для кнопок-иконок */
+.icon-btn {
+  padding: 0 14px;
+  background: #20232a;
+  border: 1px solid #343842;
+  font-size: 18px;
+  font-weight: 400;
+}
+
+.icon-btn:hover {
+  background: #2a2e36;
+}
+
+.icon-btn.active {
+  border-color: #4f7fea;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9;
+}
+
+.emoji-panel {
+  position: absolute;
+  bottom: calc(100% - 1px);
+  right: 20px;
+  width: 360px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 10px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  background: #1b1e25;
+  border: 1px solid #2e323b;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  z-index: 10;
+}
+
+.emoji-btn {
+  padding: 10px 6px;
+  min-height: 44px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: #20232a;
+  color: #f2f3f5;
+  font-size: 16px;
+  line-height: 1.1;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.emoji-btn:hover {
+  background: #2a2e36;
+  border-color: #4f7fea;
 }
 </style>
