@@ -9,9 +9,15 @@
         <feature name="default" enabled="true" />
       </package>
     </cargoProject>
+    <cargoProject FILE="$PROJECT_DIR$/sasha-itachi-1337/src-tauri/Cargo.toml">
+      <package file="$PROJECT_DIR$/sasha-itachi-1337/src-tauri">
+        <feature name="default" enabled="true" />
+      </package>
+    </cargoProject>
   </component>
   <component name="ChangeListManager">
     <list default="true" id="4c97f615-7446-4c57-b2dd-ce1cd10a0590" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/project1.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/project1.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/sasha-itachi-1337/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/sasha-itachi-1337/package-lock.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/sasha-itachi-1337/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/sasha-itachi-1337/package.json" afterDir="false" />
@@ -20,7 +26,6 @@
       <change beforePath="$PROJECT_DIR$/sasha-itachi-1337/src-tauri/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/sasha-itachi-1337/src-tauri/Cargo.toml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/sasha-itachi-1337/src-tauri/capabilities/default.json" beforeDir="false" afterPath="$PROJECT_DIR$/sasha-itachi-1337/src-tauri/capabilities/default.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/sasha-itachi-1337/src-tauri/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/sasha-itachi-1337/src-tauri/src/lib.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sasha-itachi-1337/src-tauri/tauri.conf.json" beforeDir="false" afterPath="$PROJECT_DIR$/sasha-itachi-1337/src-tauri/tauri.conf.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/sasha-itachi-1337/src/components/MessageBubble.vue" beforeDir="false" afterPath="$PROJECT_DIR$/sasha-itachi-1337/src/components/MessageBubble.vue" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/sasha-itachi-1337/src/components/MessageComposer.vue" beforeDir="false" afterPath="$PROJECT_DIR$/sasha-itachi-1337/src/components/MessageComposer.vue" afterDir="false" />
     </list>

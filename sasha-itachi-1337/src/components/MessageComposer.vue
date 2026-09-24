@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import {ref} from "vue";
-import {open} from "@tauri-apps/plugin-dialog";
+import { ref } from "vue";
+import { open } from "@tauri-apps/plugin-dialog";
+import {copyFile,mkdir, BaseDirectory,} from "@tauri-apps/plugin-fs";
 
 const emit = defineEmits<{
   send: [body: string]
-}>()
+}>();
 
 const draft = ref("");
 const showEmoji = ref(false);
@@ -23,22 +24,56 @@ function addEmoji(emoji: string) {
   draft.value += emoji;
 }
 
-// open - Открывает системный выбор файла
 async function pickImage() {
-  const file = await open({
-    multiple: false, // Запрещает выбрать несколько файлов
-    filters: [
-      {
-        name: "Images",
-        extensions: ["png", "jpg", "jpeg", "webp"]
-      }
-    ]
-  });
+  try {
+    const file = await open({
+      multiple: false,
+      directory: false,
+      filters: [
+        {
+          name: "Images",
+          extensions: ["png", "jpg", "jpeg", "webp"]
+        }
+      ]
+    });
 
-  if (!file) return;
+    if (!file || Array.isArray(file)) {
+      return;
+    }
 
-  emit("send", file);
-  showEmoji.value = false;
+    const name = file.split(/[\\/]/).pop();
+
+    if (!name) {
+      throw new Error("Не удалось получить имя файла");
+    }
+
+    // Создаём папку: AppData/attachments
+    await mkdir("attachments", {
+      baseDir: BaseDirectory.AppData,
+      recursive: true,
+    });
+
+    // выбранный файл -> AppData/attachments/name
+    await copyFile(
+        file,
+        `attachments/${name}`,
+        {
+          toPathBaseDir: BaseDirectory.AppData,
+        }
+    );
+
+    // В БД отправляем только относительный путь
+    const attachmentPath = `attachments/${name}`;
+
+    emit("send", attachmentPath);
+    showEmoji.value = false;
+
+  } catch (e) {
+    console.error(
+        "Ошибка при отправке картинки:",
+        e
+    );
+  }
 }
 </script>
 
@@ -88,18 +123,21 @@ async function pickImage() {
       <button
           type="button"
           class="icon-btn"
-          :class="{active: showEmoji}"
+          :class="{ active: showEmoji }"
           @click="showEmoji = !showEmoji"
       >
         ❦
       </button>
-      <button type="submit">Отправить</button>
+
+      <button type="submit">
+        Отправить
+      </button>
     </form>
   </div>
 </template>
 
 <style scoped>
-.composer-wrap {
+.composer-wrap{
   position: relative;
   flex-shrink: 0;
 }
@@ -113,7 +151,7 @@ async function pickImage() {
   box-sizing: border-box;
 }
 
-.composer input {
+.composer input{
   flex: 1;
   min-width: 0;
   padding: 12px 14px;
@@ -140,12 +178,11 @@ async function pickImage() {
   font-weight: 600;
 }
 
-.composer button:hover {
+.composer button:hover{
   background: #4779e8;
 }
 
-/* Общий стиль для кнопок-иконок */
-.icon-btn {
+.icon-btn{
   padding: 0 14px;
   background: #20232a;
   border: 1px solid #343842;
@@ -153,21 +190,21 @@ async function pickImage() {
   font-weight: 400;
 }
 
-.icon-btn:hover {
+.icon-btn:hover{
   background: #2a2e36;
 }
 
-.icon-btn.active {
+.icon-btn.active{
   border-color: #4f7fea;
 }
 
-.overlay {
+.overlay{
   position: fixed;
   inset: 0;
   z-index: 9;
 }
 
-.emoji-panel {
+.emoji-panel{
   position: absolute;
   bottom: calc(100% - 1px);
   right: 20px;
@@ -185,7 +222,7 @@ async function pickImage() {
   z-index: 10;
 }
 
-.emoji-btn {
+.emoji-btn{
   padding: 10px 6px;
   min-height: 44px;
   border: 1px solid transparent;
@@ -200,7 +237,7 @@ async function pickImage() {
   white-space: nowrap;
 }
 
-.emoji-btn:hover {
+.emoji-btn:hover{
   background: #2a2e36;
   border-color: #4f7fea;
 }
