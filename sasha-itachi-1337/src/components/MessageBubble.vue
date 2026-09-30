@@ -7,61 +7,48 @@ const props = defineProps<{
   message: Message;
 }>();
 
+const emit = defineEmits<{
+  update: [id: number, body: string]
+  delete: [id: number]
+}>();
+
 const imgSrc = ref("");
 const imageOpened = ref(false);
+const editing = ref(false);
+const editText = ref("");
 
 watch(
     () => props.message.body,
     async (body) => {
       imgSrc.value = "";
       imageOpened.value = false;
-      // Проверяем, является ли сообщение картинкой
+
       if (!/\.(png|jpe?g|webp)$/i.test(body)) {
         return;
       }
-      try{
-        const bytes = await readFile(
-            body,
-            {
-              baseDir: BaseDirectory.AppData,
-            }
-        );
-        const ext = body
-            .split(".")
-            .pop()!
-            .toLowerCase();
-        const mime =
-            ext === "jpg"
-                ? "jpeg"
-                : ext;
+
+      try {
+        const bytes = await readFile(body, {
+          baseDir: BaseDirectory.AppData,
+        });
+
+        const ext = body.split(".").pop()!.toLowerCase();
+        const mime = ext === "jpg" ? "jpeg" : ext;
 
         let binary = "";
         const chunkSize = 0x8000;
 
-        for (
-            let i = 0;
-            i < bytes.length;
-            i += chunkSize
-        ) {
-          const chunk = bytes.subarray(
-              i,
-              Math.min(
-                  i + chunkSize,
-                  bytes.length
-              )
-          );
-          binary += String.fromCharCode(
-              ...chunk
-          );
+        for (let i = 0; i < bytes.length; i += chunkSize) {
+          const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
+          binary += String.fromCharCode(...chunk);
         }
-        imgSrc.value =
-            `data:image/${mime};base64,${btoa(binary)}`;
+
+        imgSrc.value = `data:image/${mime};base64,${btoa(binary)}`;
       } catch (e) {
-      console.error("Не удалось прочитать картинку:", e);
+        console.error("Не удалось прочитать картинку:", e);
       }
-    }, {
-  immediate: true
-  }
+    },
+    { immediate: true }
 );
 
 function openImage() {
@@ -73,10 +60,40 @@ function openImage() {
 function closeImage() {
   imageOpened.value = false;
 }
+function startEdit() {
+  editText.value = props.message.body;
+  editing.value = true;
+}
+function saveEdit() {
+  const body = editText.value.trim();
+
+  if (body && body !== props.message.body) {
+    emit("update", props.message.id, body);
+  }
+  editing.value = false;
+}
+function cancelEdit(){
+  editing.value = false;
+}
+
+function removeMessage(){
+  if (confirm("Удалить сообщение?")){
+    emit("delete", props.message.id);
+  }
+}
+
 </script>
 
 <template>
   <article class="message">
+    <button
+      class="delete-btn"
+      type="button"
+      title="Удалить сообщение"
+      @click="removeMessage"
+    >
+      X
+    </button>
     <img
         v-if="imgSrc"
         :src="imgSrc"
@@ -85,7 +102,20 @@ function closeImage() {
         @click="openImage"
     />
 
-    <p v-else>
+    <input
+        v-else-if="editing"
+        :ref="el => (el as HTMLInputElement)?.focus()"
+        v-model="editText"
+        class="edit-input"
+        @keyup.enter="saveEdit"
+        @keyup.escape="cancelEdit"
+        @click.stop
+    />
+
+    <p
+        v-else
+        @dblclick="startEdit"
+    >
       {{ message.body }}
     </p>
 
@@ -110,6 +140,7 @@ function closeImage() {
     </button>
 
     <img
+
         :src="imgSrc"
         class="image-viewer-image"
         alt="Увеличенное изображение"
@@ -132,6 +163,7 @@ function closeImage() {
   margin: 0;
   line-height: 1.45;
   overflow-wrap: anywhere;
+  cursor: text;
 }
 
 .message-image {
@@ -140,6 +172,7 @@ function closeImage() {
   max-height: 300px;
   border-radius: 6px;
   object-fit: contain;
+  cursor: zoom-in;
 }
 
 .message footer {
@@ -149,6 +182,18 @@ function closeImage() {
   margin-top: 6px;
   color: #ccd8f7;
   font-size: 10px;
+}
+
+.delete-btn {
+  position: absolute;
+  font-size: 16px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s;
+}
+
+.message:hover .delete-btn{
+  opacity: 1;
 }
 
 .image-viewer {

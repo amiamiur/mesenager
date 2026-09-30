@@ -41,6 +41,27 @@ async function sendMessage(body: string){
   await loadMessages();
 }
 
+async function updateMessage(id: number, body: string) {
+  if (!db) return;
+
+  await db.execute(
+      "UPDATE messages SET body = $1 WHERE id = $2",
+      [body, id]
+  );
+  await loadMessages();
+}
+
+async function deleteMessage(id: number) {
+  if (!db) return;
+
+  await db.execute(
+      "DELETE FROM messages WHERE id = $1",
+      [id],
+  );
+
+  await loadMessages();
+}
+
 onMounted(async ()=>{
   try {
     db = await Database.load("sqlite:messenger.db");
@@ -67,7 +88,11 @@ onMounted(async ()=>{
 
 
       </div>
-      <MessageList :messages="messages"/>
+      <MessageList
+          :messages="messages"
+          @update="updateMessage"
+          @delete="deleteMessage"
+      />
 
       <MessageComposer @send="sendMessage"/>
     </section>

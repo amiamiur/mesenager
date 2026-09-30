@@ -10,7 +10,7 @@ const emit = defineEmits<{
 const draft = ref("");
 const showEmoji = ref(false);
 
-const emojis = ["◕‿◕", "(◕^^◕)", "{｡^◕‿◕^｡}", "◠ᴥ◠", "^︵^", "^_^", "~.~", "⌤", "☠", "☭", "♥", "☣"];
+const emojis = ["◕‿◕", "(◕^^◕)", "{｡^◕‿◕^｡}", "◠ᴥ◠", "^︵^", "^_^", "~.~", "♥"];
 
 function submitMessage() {
   const body = draft.value.trim();
@@ -40,20 +40,17 @@ async function pickImage() {
     if (!file || Array.isArray(file)) {
       return;
     }
-
     const name = file.split(/[\\/]/).pop();
 
     if (!name) {
       throw new Error("Не удалось получить имя файла");
     }
 
-    // Создаём папку: AppData/attachments
     await mkdir("attachments", {
       baseDir: BaseDirectory.AppData,
       recursive: true,
     });
 
-    // выбранный файл -> AppData/attachments/name
     await copyFile(
         file,
         `attachments/${name}`,
@@ -61,8 +58,6 @@ async function pickImage() {
           toPathBaseDir: BaseDirectory.AppData,
         }
     );
-
-    // В БД отправляем только относительный путь
     const attachmentPath = `attachments/${name}`;
 
     emit("send", attachmentPath);
