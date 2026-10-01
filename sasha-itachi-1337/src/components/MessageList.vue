@@ -4,6 +4,7 @@ import type {Message} from "../types/message.ts";
 
 defineProps<{
   messages: Message[];
+  currentUserId: number | null;
 }>();
 
 const emit = defineEmits<{
@@ -26,6 +27,7 @@ const emit = defineEmits<{
         v-for="message in messages"
         :key="message.id"
         :message="message"
+        :is-own="message.author_id === currentUserId"
         @update="(id, body) => emit('update', id, body)"
         @delete="(id) => emit('delete', id)"
     />

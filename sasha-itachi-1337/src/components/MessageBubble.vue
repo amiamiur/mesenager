@@ -5,6 +5,7 @@ import type { Message } from "../types/message.ts";
 
 const props = defineProps<{
   message: Message;
+  isOwn: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -18,21 +19,21 @@ const editing = ref(false);
 const editText = ref("");
 
 watch(
-    () => props.message.body,
-    async (body) => {
+    () => props.message.attachment,
+    async (attachment) => {
       imgSrc.value = "";
       imageOpened.value = false;
 
-      if (!/\.(png|jpe?g|webp)$/i.test(body)) {
+      if (!attachment) {
         return;
       }
 
       try {
-        const bytes = await readFile(body, {
+        const bytes = await readFile(attachment, {
           baseDir: BaseDirectory.AppData,
         });
 
-        const ext = body.split(".").pop()!.toLowerCase();
+        const ext = attachment.split(".").pop()!.toLowerCase();
         const mime = ext === "jpg" ? "jpeg" : ext;
 
         let binary = "";
@@ -51,6 +52,16 @@ watch(
     { immediate: true }
 );
 
+watch(
+    () => props.isOwn,
+    (isOwn) => {
+      if (!isOwn) {
+        editing.value = false;
+        editText.value = "";
+      }
+    }
+);
+
 function openImage() {
   if (imgSrc.value) {
     imageOpened.value = true;
@@ -61,12 +72,12 @@ function closeImage() {
   imageOpened.value = false;
 }
 function startEdit() {
-  editText.value = props.message.body;
+  if (!props.isOwn) return;
+  editText.value = props.message.body ?? "";
   editing.value = true;
 }
 function saveEdit() {
   const body = editText.value.trim();
-
   if (body && body !== props.message.body) {
     emit("update", props.message.id, body);
   }
@@ -85,8 +96,12 @@ function removeMessage(){
 </script>
 
 <template>
-  <article class="message">
+  <article
+      class="message"
+      :class="isOwn ? 'own' : 'other'"
+  >
     <button
+      v-if="isOwn"
       class="delete-btn"
       type="button"
       title="Удалить сообщение"
@@ -120,7 +135,7 @@ function removeMessage(){
     </p>
 
     <footer>
-      <span>{{ message.author }}</span>
+      <span>{{ message.author_name}}</span>
       <span>|</span>
       <span>{{ message.created_at }}</span>
     </footer>
@@ -157,6 +172,12 @@ function removeMessage(){
   padding: 10px 12px;
   border-radius: 10px;
   background: #386be0;
+  position: relative;
+}
+.message.other{
+  align-self: flex-start;
+  background: #121212;
+  color: #efefef;
 }
 
 .message p {
@@ -164,6 +185,10 @@ function removeMessage(){
   line-height: 1.45;
   overflow-wrap: anywhere;
   cursor: text;
+}
+
+.message.other p{
+  cursor: default;
 }
 
 .message-image {
@@ -175,25 +200,52 @@ function removeMessage(){
   cursor: zoom-in;
 }
 
-.message footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 5px;
-  margin-top: 6px;
-  color: #ccd8f7;
-  font-size: 10px;
+.edit-input {
+  width: 100%;
+  min-width: 200px;
+  margin: 0;
+  padding: 4px 6px;
+  border: 1px solid #ccd8f7;
+  border-radius: 4px;
+  background: #2a4fb8;
+  color: #f2f3f5;
+  font: inherit;
+  line-height: 1.45;
+  outline: none;
 }
 
 .delete-btn {
   position: absolute;
+  top: 4px;
+  right: 6px;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #ccd8f7;
   font-size: 16px;
+  line-height: 1;
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.15s, background 0.15s;
 }
 
-.message:hover .delete-btn{
+.message:hover .delete-btn {
   opacity: 1;
+}
+
+.message footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 5px;
+  margin-top: 6px;
+  font-size: 10px;
+}
+
+.message.own footer{
+  color: #c8e4db;
 }
 
 .image-viewer {

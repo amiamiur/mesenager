@@ -17,11 +17,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="4c97f615-7446-4c57-b2dd-ce1cd10a0590" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/sasha-itachi-1337/src/types/user.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/sasha-itachi-1337/src/App.vue" beforeDir="false" afterPath="$PROJECT_DIR$/sasha-itachi-1337/src/App.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sasha-itachi-1337/src/components/AppHeader.vue" beforeDir="false" afterPath="$PROJECT_DIR$/sasha-itachi-1337/src/components/AppHeader.vue" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/sasha-itachi-1337/src/components/MessageBubble.vue" beforeDir="false" afterPath="$PROJECT_DIR$/sasha-itachi-1337/src/components/MessageBubble.vue" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/sasha-itachi-1337/src/components/MessageComposer.vue" beforeDir="false" afterPath="$PROJECT_DIR$/sasha-itachi-1337/src/components/MessageComposer.vue" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/sasha-itachi-1337/src/components/MessageList.vue" beforeDir="false" afterPath="$PROJECT_DIR$/sasha-itachi-1337/src/components/MessageList.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sasha-itachi-1337/src/types/message.ts" beforeDir="false" afterPath="$PROJECT_DIR$/sasha-itachi-1337/src/types/message.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -32,8 +35,8 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
-        <option value="TypeScript File" />
         <option value="Vue Composition API Component" />
+        <option value="TypeScript File" />
       </list>
     </option>
   </component>

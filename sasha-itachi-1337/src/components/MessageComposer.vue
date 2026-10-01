@@ -4,7 +4,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import {copyFile,mkdir, BaseDirectory,} from "@tauri-apps/plugin-fs";
 
 const emit = defineEmits<{
-  send: [body: string]
+  send: [payload: {body:string | null, attachment: string | null}]
 }>();
 
 const draft = ref("");
@@ -15,7 +15,7 @@ const emojis = ["◕‿◕", "(◕^^◕)", "{｡^◕‿◕^｡}", "◠ᴥ◠", "
 function submitMessage() {
   const body = draft.value.trim();
   if (!body) return;
-  emit("send", body);
+  emit("send", {body, attachment: null});
   draft.value = "";
   showEmoji.value = false;
 }
@@ -51,16 +51,11 @@ async function pickImage() {
       recursive: true,
     });
 
-    await copyFile(
-        file,
-        `attachments/${name}`,
-        {
-          toPathBaseDir: BaseDirectory.AppData,
-        }
-    );
-    const attachmentPath = `attachments/${name}`;
+    await copyFile(file, `attachments/${name}`, {
+      toPathBaseDir: BaseDirectory.AppData,
+    });
 
-    emit("send", attachmentPath);
+    emit("send", { body: null, attachment: `attachments/${name}` });
     showEmoji.value = false;
 
   } catch (e) {
