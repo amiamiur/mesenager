@@ -8,12 +8,26 @@ import Database from "@tauri-apps/plugin-sql";
 import AppHeader from "./components/AppHeader.vue";
 import MessageList from "./components/MessageList.vue";
 import MessageComposer from "./components/MessageComposer.vue";
+import ProfileModal from "./components/ProfileModal.vue";
+
+const showProfile = ref(false);
 
 import type {Message} from "./types/message.ts";
 import type {User} from "./types/user.ts";
 
 const CHAT_ID = 1;
 
+const savedTheme = (localStorage.getItem("theme") as "dark" | "light" | null) ?? "dark";
+const theme = ref<"dark" | "light">(savedTheme);
+
+// Применяем тему сразу при загрузке до первого рендера
+document.documentElement.setAttribute("data-theme", savedTheme);
+
+function setTheme(t: "dark" | "light") {
+  theme.value = t;
+  document.documentElement.setAttribute("data-theme", t);
+  localStorage.setItem("theme", t);
+}
 
 // Строит структуру одного сообщения
 
@@ -51,6 +65,11 @@ async function initDatabase() {
   // ⚠️ ОДНОРАЗОВО: если messages старой схемы — сносим
   const cols = await db.select<{ name: string }[]>("PRAGMA table_info(messages)");
   const hasChatId = cols.some(c => c.name === "chat_id");
+  const userCols = await db.select<{ name: string }[]>("PRAGMA table_info(users)");
+  if (!userCols.some(c => c.name === "bio")) {
+    console.log("[init] Добавляем колонку bio в users");
+    await db.execute("ALTER TABLE users ADD COLUMN bio TEXT NOT NULL DEFAULT ''");
+  }
 
   if (cols.length > 0 && !hasChatId) {
     console.log("[init] Старая схема messages — удаляем и пересоздаём");
@@ -85,8 +104,29 @@ async function initDatabase() {
 async function loadUsers(){
   if (!db) return;
   users.value = await db.select<User[]>(
-      "SELECT id, username, display_name, avatar_path, status, created_at FROM users ORDER BY id ASC",
+      "SELECT id, username, display_name, avatar_path, status, bio, created_at FROM users ORDER BY id ASC",
   )
+}
+
+async function updateUser(
+    id: number,
+    data: { display_name: string; bio: string; avatar_path: string | null }
+) {
+  if (!db) return;
+
+  await db.execute(
+      "UPDATE users SET display_name = $1, bio = $2, avatar_path = $3 WHERE id = $4",
+      [data.display_name, data.bio, data.avatar_path, id],
+  );
+
+  await loadUsers();
+
+  if (currentUser.value && currentUser.value.id === id) {
+    currentUser.value = users.value.find(u => u.id === id) ?? null;
+  }
+
+  await loadMessages();
+  showProfile.value = false;
 }
 
 async function loadMessages(){
@@ -194,7 +234,10 @@ onMounted(async () => {
         :status="status"
         :users="users"
         :current-user-id="currentUser?.id ?? null"
+        :theme="theme"
         @select-user="selectUser"
+        @set-theme="setTheme"
+        @open-profile="showProfile = true"
     />
     <section class="chat">
       <div class="chat-info">
@@ -211,6 +254,12 @@ onMounted(async () => {
 
       <MessageComposer @send="sendMessage"/>
     </section>
+    <ProfileModal
+        v-if="showProfile && currentUser"
+        :user="currentUser"
+        @close="showProfile = false"
+        @save="(data) => updateUser(currentUser!.id, data)"
+    />
   </main>
 </template>
 
@@ -219,24 +268,85 @@ onMounted(async () => {
   box-sizing: border-box;
 }
 
-:global(html){
-  background: #111318;
-  color-scheme: dark;
+/* темная тема */
+:global(:root) {
+  --bg: #111318;
+  --bg-surface: #17191f;
+  --bg-elevated: #20232a;
+  --bg-hover: #2a2e36;
+  --border: #292c34;
+  --border-soft: #343842;
+  --border-strong: #2e323b;
+  --text: #f2f3f5;
+  --text-muted: #8f96a3;
+  --text-dim: #858c98;
+  --text-soft: #afb5c0;
+  --bubble-other-bg: #121212;
+  --bubble-other-text: #efefef;
+  --bubble-own-footer: #c8e4db;
+  --badge-bg: #20232a;
+  --badge-border: #343842;
+  --badge-text: #afb5c0;
+  --emoji-panel-bg: #1b1e25;
+  --emoji-panel-border: #2e323b;
+  --edit-input-bg: #2a4fb8;
+  --edit-input-border: #ccd8f7;
+  --delete-color: #ccd8f7;
+  --composer-input-bg: #20232a;
+  --composer-input-border: #343842;
+
+  /* синий, не меняется между темами */
+  --accent: #386be0;
+  --accent-hover: #4779e8;
+  --accent-focus: #4f7fea;
 }
+
+/* светлая тема */
+:global([data-theme="light"]) {
+  --bg: #eef1f6;
+  --bg-surface: #ffffff;
+  --bg-elevated: #e8ebf0;
+  --bg-hover: #dde1e8;
+  --border: #d8dce3;
+  --border-soft: #d0d4dc;
+  --border-strong: #c8cdd6;
+  --text: #1a1d24;
+  --text-muted: #6b7280;
+  --text-dim: #6b7280;
+  --text-soft: #4a5160;
+  --bubble-other-bg: #ffffff;
+  --bubble-other-text: #1a1d24;
+  --bubble-own-footer: #d4e5ff;
+  --badge-bg: #e8ebf0;
+  --badge-border: #d0d4dc;
+  --badge-text: #4a5160;
+  --emoji-panel-bg: #ffffff;
+  --emoji-panel-border: #d8dce3;
+  --edit-input-bg: #386be0;
+  --edit-input-border: #4f7fea;
+  --delete-color: #ffffff;
+  --composer-input-bg: #ffffff;
+  --composer-input-border: #d8dce3;
+
+  --accent: #386be0;
+  --accent-hover: #4779e8;
+  --accent-focus: #4f7fea;
+}
+
+:global(html){
+  background: var(--bg);
+}
+
+:global(html[data-theme="dark"]){ color-scheme: dark; }
+:global(html[data-theme="light"]){ color-scheme: light; }
 
 :global(body){
   margin: 0;
-
-  font-family: Inter,
-  system-ui,
-  -apple-system,
-  BlickMacSystemFont,
-  "Segoe UI",
-  sans-serif;
-
-  color: #f2f3f5;
-  background: #111318;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--text);
+  background: var(--bg);
 }
+
 .app{
   height: 100vh;
   display: flex;
@@ -253,7 +363,7 @@ onMounted(async () => {
 
 .chat-info{
   padding: 20px 25px;
-  border-bottom: 1px solid #252830;
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 
@@ -264,7 +374,7 @@ onMounted(async () => {
 
 .chat-info p{
   margin: 5px 0 0;
-  color: #858c98;
+  color: var(--text-dim);
 }
 
 </style>

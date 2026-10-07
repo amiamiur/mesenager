@@ -136,8 +136,8 @@ async function pickImage() {
   display: flex;
   gap: 10px;
   padding: 16px 20px;
-  border-top: 1px solid #252830;
-  background: #17191f;
+  border-top: 1px solid var(--border);
+  background: var(--bg-surface);
   box-sizing: border-box;
 }
 
@@ -145,16 +145,16 @@ async function pickImage() {
   flex: 1;
   min-width: 0;
   padding: 12px 14px;
-  border: 1px solid #343842;
+  border: 1px solid var(--composer-input-border);
   border-radius: 6px;
   outline: none;
-  color: #f2f3f5;
-  background: #20232a;
+  color: var(--text);
+  background: var(--composer-input-bg);
   font: inherit;
 }
 
 .composer input:focus{
-  border-color: #4f7fea;
+  border-color: var(--accent-focus);
 }
 
 .composer button{
@@ -163,25 +163,25 @@ async function pickImage() {
   border-radius: 8px;
   cursor: pointer;
   color: white;
-  background: #386be0;
+  background: var(--accent);
   font: inherit;
   font-weight: 600;
 }
 
 .composer button:hover{
-  background: #4779e8;
+  background: var(--accent-hover);
 }
 
 .icon-btn{
   padding: 0 14px;
-  background: #20232a;
-  border: 1px solid #343842;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-soft);
   font-size: 18px;
   font-weight: 400;
 }
 
 .icon-btn:hover{
-  background: #2a2e36;
+  background: var(--accent-focus);
 }
 
 .icon-btn.active{
@@ -205,8 +205,8 @@ async function pickImage() {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 6px;
-  background: #1b1e25;
-  border: 1px solid #2e323b;
+  background: var(--emoji-panel-bg);
+  border: 1px solid var(--emoji-panel-border);
   border-radius: 10px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
   z-index: 10;
@@ -217,8 +217,8 @@ async function pickImage() {
   min-height: 44px;
   border: 1px solid transparent;
   border-radius: 6px;
-  background: #20232a;
-  color: #f2f3f5;
+  background: var(--bg-elevated);
+  color: var(--text);
   font-size: 16px;
   line-height: 1.1;
   cursor: pointer;
@@ -228,7 +228,7 @@ async function pickImage() {
 }
 
 .emoji-btn:hover{
-  background: #2a2e36;
-  border-color: #4f7fea;
+  background: var(--bg-hover);
+  border-color: var(--accent-focus);
 }
 </style>

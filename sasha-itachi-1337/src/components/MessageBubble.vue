@@ -171,13 +171,13 @@ function removeMessage(){
   margin: 0;
   padding: 10px 12px;
   border-radius: 10px;
-  background: #386be0;
+  background: var(--accent);
   position: relative;
 }
 .message.other{
   align-self: flex-start;
-  background: #121212;
-  color: #efefef;
+  background: var(--bubble-other-bg);
+  color: var(--bubble-other-text);
 }
 
 .message p {
@@ -205,10 +205,10 @@ function removeMessage(){
   min-width: 200px;
   margin: 0;
   padding: 4px 6px;
-  border: 1px solid #ccd8f7;
+  border: 1px solid var(--edit-input-border);
   border-radius: 4px;
-  background: #2a4fb8;
-  color: #f2f3f5;
+  background: var(--edit-input-bg);
+  color: white;
   font: inherit;
   line-height: 1.45;
   outline: none;
@@ -224,12 +224,16 @@ function removeMessage(){
   border: none;
   border-radius: 50%;
   background: transparent;
-  color: #ccd8f7;
+  color: var(--delete-color);
   font-size: 16px;
   line-height: 1;
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.15s, background 0.15s;
+}
+
+.delete-btn:hover {
+  background: rgba(0, 0, 0, 0.25);
 }
 
 .message:hover .delete-btn {
@@ -244,8 +248,12 @@ function removeMessage(){
   font-size: 10px;
 }
 
+.message.other footer{
+  color: var(--text-muted);
+}
+
 .message.own footer{
-  color: #c8e4db;
+  color: var(--bubble-own-footer)
 }
 
 .image-viewer {
