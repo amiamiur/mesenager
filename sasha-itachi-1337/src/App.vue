@@ -10,10 +10,13 @@ import MessageList from "./components/MessageList.vue";
 import MessageComposer from "./components/MessageComposer.vue";
 import ProfileModal from "./components/ProfileModal.vue";
 
-const showProfile = ref(false);
-
 import type {Message} from "./types/message.ts";
 import type {User} from "./types/user.ts";
+
+
+const showProfile = ref(false);
+const profileUser = ref<User | null>(null);
+const profileReadOnly = ref(false);
 
 const CHAT_ID = 1;
 
@@ -62,7 +65,7 @@ async function initDatabase() {
     )
   `);
 
-  // ⚠️ ОДНОРАЗОВО: если messages старой схемы — сносим
+  // ОДНОРАЗОВО: если messages старой схемы — сносим
   const cols = await db.select<{ name: string }[]>("PRAGMA table_info(messages)");
   const hasChatId = cols.some(c => c.name === "chat_id");
   const userCols = await db.select<{ name: string }[]>("PRAGMA table_info(users)");
@@ -136,14 +139,38 @@ async function loadMessages(){
       [CHAT_ID],
   );
 
-  messages.value = rows.map(m => ({
-    ...m,
-    author_name: users.value.find(u => u.id === m.author_id)?.display_name ?? "Хз кто",
-  }));
+  messages.value = rows.map(m => {
+    const u = users.value.find(u => u.id === m.author_id);
+    return{
+      ...m,
+      author_name: u?.display_name ?? "Хз кто",
+      author_avatar: u?.avatar_path ?? null,
+    };
+  });
 }
 
 function selectUser(user: User){
   currentUser.value = user;
+}
+
+function openOwnProfile(){
+  profileUser.value = currentUser.value;
+  profileReadOnly.value = false;
+  showProfile.value = true;
+}
+
+function openUserProfile(userId:number){
+  const u = users.value.find(u => u.id === userId);
+  if (!u) return;
+  profileUser.value = u;
+  profileReadOnly.value = true;
+  showProfile.value = true;
+}
+
+function closeProfile(){
+  showProfile.value = false;
+  profileUser.value = null;
+  profileReadOnly.value = false;
 }
 
 async function sendMessage(payload: {body: string | null, attachment: string | null}){
@@ -237,7 +264,7 @@ onMounted(async () => {
         :theme="theme"
         @select-user="selectUser"
         @set-theme="setTheme"
-        @open-profile="showProfile = true"
+        @open-profile="openOwnProfile"
     />
     <section class="chat">
       <div class="chat-info">
@@ -250,15 +277,17 @@ onMounted(async () => {
           :current-user-id="currentUser?.id ?? null"
           @update="updateMessage"
           @delete="deleteMessage"
+          @open-profile="openUserProfile"
       />
 
       <MessageComposer @send="sendMessage"/>
     </section>
     <ProfileModal
-        v-if="showProfile && currentUser"
-        :user="currentUser"
-        @close="showProfile = false"
-        @save="(data) => updateUser(currentUser!.id, data)"
+        v-if="showProfile && profileUser"
+        :user="profileUser"
+        :readonly="profileReadOnly"
+        @close="closeProfile"
+        @save="(data) => updateUser(profileUser!.id, data)"
     />
   </main>
 </template>

@@ -7,6 +7,7 @@ import type { User } from "../types/user.ts";
 
 const props = defineProps<{
   user: User;
+  readonly: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -34,6 +35,7 @@ watch(
 );
 
 async function pickAvatar() {
+  if (props.readonly) return;
   try {
     busy.value = true;
 
@@ -73,6 +75,7 @@ async function pickAvatar() {
 }
 
 function save() {
+  if (props.readonly) return;
   emit("save", {
     display_name: displayName.value.trim() || props.user.display_name,
     bio: bio.value.trim(),
@@ -84,21 +87,47 @@ function save() {
 <template>
   <div class="modal-backdrop" @click.self="emit('close')">
     <div class="modal">
-      <h2>Профиль</h2>
+      <button
+          type="button"
+          class="close-x"
+          title="Закрыть"
+          @click="emit('close')"
+      >
+        ×
+      </button>
+
+      <h2>{{ readonly ? "Профиль" : "Редактировать профиль" }}</h2>
 
       <div class="avatar-block">
         <div class="avatar-preview">
           <img v-if="avatarSrc" :src="avatarSrc" alt="" />
           <span v-else>{{ user.display_name[0] }}</span>
         </div>
-        <button type="button" :disabled="busy" @click="pickAvatar">
+
+        <div class="avatar-info">
+          <div class="user-name">{{ user.display_name }}</div>
+          <div class="user-status">{{ user.status || "—" }}</div>
+        </div>
+
+        <button
+            v-if="!readonly"
+            type="button"
+            class="change-avatar"
+            :disabled="busy"
+            @click="pickAvatar"
+        >
           {{ busy ? "Загрузка…" : "Сменить аватар" }}
         </button>
       </div>
 
       <label>
         <span>Ник</span>
-        <input v-model="displayName" type="text" maxlength="32" />
+        <input
+            v-model="displayName"
+            type="text"
+            maxlength="32"
+            :disabled="readonly"
+        />
       </label>
 
       <label>
@@ -108,10 +137,11 @@ function save() {
             rows="4"
             maxlength="300"
             placeholder="Пара слов о себе"
+            :disabled="readonly"
         ></textarea>
       </label>
 
-      <div class="actions">
+      <div v-if="!readonly" class="actions">
         <button type="button" class="ghost" @click="emit('close')">
           Отмена
         </button>
@@ -124,6 +154,17 @@ function save() {
 </template>
 
 <style scoped>
+.status-line {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+label input:disabled,
+label textarea:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -136,6 +177,7 @@ function save() {
 }
 
 .modal {
+  position: relative;
   width: 100%;
   max-width: 420px;
   padding: 24px;
@@ -149,6 +191,7 @@ function save() {
 
 .modal h2 {
   margin: 0;
+  padding-right: 40px;
   font-size: 18px;
 }
 
@@ -179,6 +222,30 @@ function save() {
   object-fit: cover;
 }
 
+/* ——— новые три класса, которых у тебя не было ——— */
+.avatar-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.user-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-status {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+/* ——— конец новых ——— */
+
 .avatar-block button {
   padding: 8px 14px;
   border: 1px solid var(--border-soft);
@@ -187,6 +254,8 @@ function save() {
   color: var(--text);
   font: inherit;
   cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.12s;
 }
 
 .avatar-block button:hover:not(:disabled) {
@@ -254,5 +323,35 @@ label textarea:focus {
 
 .actions .primary:hover {
   background: var(--accent-hover);
+}
+
+.close-x {
+  position:absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--accent-focus);
+  border-radius: 6px;
+  background: var(--accent);
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s, border-color 0.12s, transform 0.1s;
+}
+
+.close-x:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.close-x:active {
+  transform: scale(0.94);
 }
 </style>

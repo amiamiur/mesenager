@@ -1,22 +1,25 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
-import {readFile, BaseDirectory} from "@tauri-apps/plugin-fs";
 import type { Message } from "../types/message.ts";
+import {readImageAsDataUrl} from "../utils/readImage.ts"
 
 const props = defineProps<{
   message: Message;
   isOwn: boolean;
+  avatarPath?: string | null;
 }>();
 
 const emit = defineEmits<{
   update: [id: number, body: string]
   delete: [id: number]
+  'open-profile': [userId:number]
 }>();
 
 const imgSrc = ref("");
 const imageOpened = ref(false);
 const editing = ref(false);
 const editText = ref("");
+const avatarSrc = ref("");
 
 watch(
     () => props.message.attachment,
@@ -24,43 +27,37 @@ watch(
       imgSrc.value = "";
       imageOpened.value = false;
 
-      if (!attachment) {
-        return;
-      }
+      if (!attachment) return;
 
-      try {
-        const bytes = await readFile(attachment, {
-          baseDir: BaseDirectory.AppData,
-        });
-
-        const ext = attachment.split(".").pop()!.toLowerCase();
-        const mime = ext === "jpg" ? "jpeg" : ext;
-
-        let binary = "";
-        const chunkSize = 0x8000;
-
-        for (let i = 0; i < bytes.length; i += chunkSize) {
-          const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
-          binary += String.fromCharCode(...chunk);
-        }
-
-        imgSrc.value = `data:image/${mime};base64,${btoa(binary)}`;
-      } catch (e) {
-        console.error("Не удалось прочитать картинку:", e);
-      }
+      imgSrc.value = await readImageAsDataUrl(attachment);
     },
     { immediate: true }
 );
 
 watch(
-    () => props.isOwn,
-    (isOwn) => {
-      if (!isOwn) {
-        editing.value = false;
-        editText.value = "";
-      }
-    }
+    () => props.message.attachment,
+    async (attachment) => {
+      imgSrc.value = "";
+      imageOpened.value = false;
+
+      if (!attachment) return;
+
+      imgSrc.value = await readImageAsDataUrl(attachment);
+    },
+    {immediate: true}
 );
+
+watch(
+    () => [props.isOwn, props.avatarPath] as const,
+    async([isOwn, path]) => {
+      if (isOwn || !path){
+        avatarSrc.value = "";
+        return
+      }
+      avatarSrc.value = await readImageAsDataUrl(path);
+    },
+    {immediate: true}
+)
 
 function openImage() {
   if (imgSrc.value) {
@@ -93,53 +90,93 @@ function removeMessage(){
   }
 }
 
+watch(
+    () => props.isOwn,
+    (isOwn) => {
+      if (!isOwn){
+        editing.value = false;
+        editText.value = "";
+      }
+    }
+);
+
 </script>
 
 <template>
-  <article
-      class="message"
+  <div
+      class="message-row"
       :class="isOwn ? 'own' : 'other'"
   >
-    <button
-      v-if="isOwn"
-      class="delete-btn"
-      type="button"
-      title="Удалить сообщение"
-      @click="removeMessage"
+    <template v-if="!isOwn">
+      <img
+          v-if="avatarSrc"
+          :src="avatarSrc"
+          class="avatar clickable"
+          alt=""
+          :title="`Открыть профиль ${message.author_name}`"
+          @click="emit('open-profile', message.author_id)"
+      />
+      <div
+          v-else
+          class="avatar placeholder clickable"
+          :title="`Открыть профиль ${message.author_name}`"
+          @click="emit('open-profile', message.author_id)"
+      >
+        {{ message.author_name[0] }}
+      </div>
+    </template>
+
+    <article
+        class="message"
+        :class="isOwn ? 'own' : 'other'"
     >
-      X
-    </button>
-    <img
-        v-if="imgSrc"
-        :src="imgSrc"
-        class="message-image"
-        alt="Вложение"
-        @click="openImage"
-    />
+      <button
+          v-if="isOwn"
+          class="delete-btn"
+          type="button"
+          title="Удалить сообщение"
+          @click="removeMessage"
+      >
+        X
+      </button>
 
-    <input
-        v-else-if="editing"
-        :ref="el => (el as HTMLInputElement)?.focus()"
-        v-model="editText"
-        class="edit-input"
-        @keyup.enter="saveEdit"
-        @keyup.escape="cancelEdit"
-        @click.stop
-    />
+      <div
+        v-if="!isOwn"
+        class="author"
+      >
+        {{message.author_name}}
+      </div>
 
-    <p
-        v-else
-        @dblclick="startEdit"
-    >
-      {{ message.body }}
-    </p>
+      <img
+          v-if="imgSrc"
+          :src="imgSrc"
+          class="message-image"
+          alt="Вложение"
+          @click="openImage"
+      />
 
-    <footer>
-      <span>{{ message.author_name}}</span>
-      <span>|</span>
-      <span>{{ message.created_at }}</span>
-    </footer>
-  </article>
+      <input
+          v-else-if="editing"
+          :ref="el => (el as HTMLInputElement)?.focus()"
+          v-model="editText"
+          class="edit-input"
+          @keyup.enter="saveEdit"
+          @keyup.escape="cancelEdit"
+          @click.stop
+      />
+
+      <p
+          v-else
+          @dblclick="startEdit"
+      >
+        {{ message.body }}
+      </p>
+
+      <footer>
+        <span>{{ message.created_at }}</span>
+      </footer>
+    </article>
+  </div>
 
   <div
       v-if="imageOpened"
@@ -155,7 +192,6 @@ function removeMessage(){
     </button>
 
     <img
-
         :src="imgSrc"
         class="image-viewer-image"
         alt="Увеличенное изображение"
@@ -165,19 +201,73 @@ function removeMessage(){
 </template>
 
 <style scoped>
-.message {
-  align-self: flex-end;
+.message-row{
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
   max-width: 70%;
+}
+
+.message-row.own{
+  align-self: flex-end;
+}
+
+.message-row.other{
+  align-self: flex-start;
+}
+
+.avatar{
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.avatar.placeholder{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-elevated);
+  color: var(--text-soft);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.avatar.clickable{
+  cursor:pointer;
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+
+.avatar.clickable:hover{
+  transform: scale(1.08);
+  box-shadow: 0 0 0 2px var(--accent-focus);
+}
+
+.message {
+  min-width: 0;
   margin: 0;
   padding: 10px 12px;
   border-radius: 10px;
-  background: var(--accent);
   position: relative;
 }
+
+.message.own{
+  background: var(--accent);
+  color: white;
+}
+
 .message.other{
-  align-self: flex-start;
   background: var(--bubble-other-bg);
   color: var(--bubble-other-text);
+}
+
+.author {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  opacity: 0.85;
+  letter-spacing: 0.2px;
 }
 
 .message p {
@@ -253,7 +343,7 @@ function removeMessage(){
 }
 
 .message.own footer{
-  color: var(--bubble-own-footer)
+  color: var(--bubble-own-footer);
 }
 
 .image-viewer {

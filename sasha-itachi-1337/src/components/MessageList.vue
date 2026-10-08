@@ -10,6 +10,7 @@ defineProps<{
 const emit = defineEmits<{
   update: [id: number, body: string]
   delete: [id: number]
+  'open-profile': [userId: number]
 }>();
 </script>
 
@@ -28,8 +29,10 @@ const emit = defineEmits<{
         :key="message.id"
         :message="message"
         :is-own="message.author_id === currentUserId"
+        :avatar-path="message.author_avatar"
         @update="(id, body) => emit('update', id, body)"
         @delete="(id) => emit('delete', id)"
+        @open-profile="(id) => emit('open-profile', id)"
     />
   </div>
 </template>

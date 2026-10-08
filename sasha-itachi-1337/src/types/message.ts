@@ -7,4 +7,5 @@ export interface Message {
     attachment: string | null;
     created_at: string;
     author_name: string;
+    author_avatar: string | null;
 }
